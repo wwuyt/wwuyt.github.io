@@ -60,6 +60,15 @@ function fmtPlaytime(minutes) {
   );
   const p = (summary.response.players || [])[0] || {};
 
+  // 等级
+  let level = 0;
+  try {
+    const lv = await fetchJson(
+      `https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=${KEY}&steamid=${STEAM_ID}&format=json`
+    );
+    level = (lv.response && lv.response.player_level) || 0;
+  } catch (e) { /* 忽略等级失败 */ }
+
   const out = {
     updated_at: new Date().toISOString(),
     player: {
@@ -67,6 +76,7 @@ function fmtPlaytime(minutes) {
       name: p.personaname || 'Steam User',
       avatar: p.avatarfull || '',
       profile_url: p.profileurl || `https://steamcommunity.com/profiles/${STEAM_ID}/`,
+      level,
     },
     total_games: games.length,
     total_playtime_hours: Math.round(games.reduce((s, g) => s + g.playtime_hours, 0) * 10) / 10,
