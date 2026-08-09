@@ -6,29 +6,175 @@
   </header>
   <div class="post-content">{{ .Content }}</div>
 
-  <h2>已看（示例）</h2>
-  <div class="bangumi-grid">
-    <a class="bangumi-card" href="https://neodb.social/movie/4HIDhJLY5xlWOTWDeI7OvA" target="_blank" rel="noopener">
-      <img class="bangumi-cover" src="https://neodb.social/media/covers/2024/4/07/4xlWOTWDeI7OvA_xl.jpg" alt="千与千寻" loading="lazy">
-      <div class="bangumi-info"><div class="bangumi-title">千与千寻</div><div class="bangumi-meta"><span class="bangumi-rate">10⭐</span><div class="bangumi-ep">2001</div></div></div>
-    </a>
-    <a class="bangumi-card" href="https://neodb.social/movie/2tocwRZcBlIw6iJJhvdRWA" target="_blank" rel="noopener">
-      <img class="bangumi-cover" src="https://neodb.social/media/covers/2023/6/15/cBlIw6iJJhvdRWA_xl.jpg" alt="星际穿越" loading="lazy">
-      <div class="bangumi-info"><div class="bangumi-title">星际穿越</div><div class="bangumi-meta"><span class="bangumi-rate">9⭐</span><div class="bangumi-ep">2014</div></div></div>
-    </a>
-    <a class="bangumi-card" href="https://neodb.social/movie/g9UuBqLRxvDokbFjxS5T1g" target="_blank" rel="noopener">
-      <img class="bangumi-cover" src="https://neodb.social/media/covers/2024/1/26/xvDokbFjxS5T1g_xl.jpg" alt="流浪地球2" loading="lazy">
-      <div class="bangumi-info"><div class="bangumi-title">流浪地球2</div><div class="bangumi-meta"><span class="bangumi-rate">8⭐</span><div class="bangumi-ep">2023</div></div></div>
-    </a>
-  </div>
+  <h2 id="wishlist">想看 <span class="loading">加载中...</span></h2>
+  <div id="wishlist-grid" class="bangumi-grid"></div>
 
-  <div style="margin-top:40px;padding:16px;background:var(--code-bg,#f5f5f5);border-radius:8px;">
-    <strong>📌 想接入你的真实数据？</strong>
-    <ol style="margin:8px 0 0;padding-left:20px;">
-      <li>登录 NeoDB → 设置 → 导出 → 下载 JSON 文件。</li>
-      <li>把文件发给我或放进 <code>data/neodb_complete.json</code>，我会做成静态页面。</li>
-      <li>或者申请 <a href="https://neodb.social/developer/" target="_blank" rel="noopener">NeoDB API Token</a>，做成前端实时版。</li>
-    </ol>
+  <h2 id="completed">已看 <span class="loading">加载中...</span></h2>
+  <div id="completed-grid" class="bangumi-grid"></div>
+
+  <div id="completed-more-wrap" style="display:none;margin-top:16px;">
+    <a id="completed-more-link" class="bangumi-more-btn" href="https://neodb.social/users/NeuroRead/shelf?category=movie" target="_blank" rel="noopener">在 NeoDB 查看更多 →</a>
   </div>
 </article>
+
+<script>
+(function() {
+  const NEODB_TOKEN = '{{ .Site.Params.neodbToken }}';
+  const API_BASE = 'https://neodb.social/api';
+  const USER_SHELF_URL = 'https://neodb.social/users/NeuroRead/shelf?category=movie';
+
+  function ratingStr(grade) {
+    if (!grade || grade === 0) return '';
+    var stars = Math.round(grade / 2);
+    return stars > 0 ? '⭐'.repeat(stars) : '☆';
+  }
+
+  function getTitle(item) {
+    var locs = item.localized_title || [];
+    for (var i = 0; i < locs.length; i++) {
+      if (locs[i].lang === 'zh-cn' || locs[i].lang === 'zh-hans') return locs[i].text;
+    }
+    for (var j = 0; j < locs.length; j++) {
+      if (locs[j].lang === 'zh') return locs[j].text;
+    }
+    return item.display_title || item.title || '';
+  }
+
+  function escapeAttr(s) {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderCards(items, containerId, emptyMsg) {
+    var el = document.getElementById(containerId);
+    if (!items || items.length === 0) {
+      el.innerHTML = '<p class="calendar-empty">' + emptyMsg + '</p>';
+      return;
+    }
+    var html = '';
+    items.forEach(function(mark) {
+      var item = mark.item || {};
+      var img = item.cover_image_url || '';
+      var title = getTitle(item);
+      var rate = ratingStr(mark.rating_grade);
+      var itemUrl = item.url ? 'https://neodb.social' + item.url : '#';
+
+      html += '<a class="bangumi-card" href="' + itemUrl + '" target="_blank" rel="noopener">' +
+        (img ? '<img class="bangumi-cover" src="' + img + '" alt="" loading="lazy">' : '<div class="bangumi-cover bangumi-cover-empty"></div>') +
+        '<div class="bangumi-info"><div class="bangumi-title" title="' + escapeAttr(title) + '">' + title + '</div>' +
+        '<div class="bangumi-meta">' +
+        (rate ? '<span class="bangumi-rate">' + rate + '</span>' : '') +
+        '</div></div></a>';
+    });
+    el.innerHTML = html;
+  }
+
+  async function loadShelf(shelfType, emptyMsg, containerId, opts) {
+    try {
+      var url = API_BASE + '/me/shelf/' + shelfType + '?category=movie&page=1&page_size=50';
+      var r = await fetch(url, {
+        headers: { 'Authorization': 'Bearer ' + NEODB_TOKEN }
+      });
+      if (!r.ok) throw new Error('API error ' + r.status);
+      var d = await r.json();
+      var items = d.data || [];
+      renderCards(items, containerId, emptyMsg);
+      var counterEl = document.querySelector('#' + containerId.replace('-grid', '') + ' .loading');
+      if (counterEl) counterEl.textContent = '(' + (d.count || items.length) + ')';
+
+      if (opts && opts.moreWrap && d.count > items.length) {
+        var wrapEl = document.getElementById(opts.moreWrap);
+        if (wrapEl) wrapEl.style.display = 'block';
+      }
+    } catch(e) {
+      var el = document.getElementById(containerId);
+      if (el) el.innerHTML = '<p class="calendar-empty">加载失败，请检查网络或 Token 配置</p>';
+      console.error('NeoDB load error:', e);
+    }
+  }
+
+  if (!NEODB_TOKEN) {
+    document.querySelectorAll('.loading').forEach(function(el) {
+      el.textContent = '(需要配置 Token)';
+    });
+    document.querySelectorAll('.bangumi-grid').forEach(function(el) {
+      el.innerHTML = '<p class="calendar-empty">请在 <a href="https://neodb.social/developer/" target="_blank" rel="noopener">NeoDB Developer</a> 创建应用获取 Token，然后在 <code>hugo.toml</code> 的 <code>[params]</code> 中添加 <code>neodbToken = "你的Token"</code>。</p>';
+    });
+    document.getElementById('completed-more-wrap').style.display = 'none';
+  } else {
+    loadShelf('wishlist', '暂无想看的电影', 'wishlist-grid');
+    loadShelf('complete', '暂无已看的电影', 'completed-grid', {
+      moreWrap: 'completed-more-wrap'
+    });
+  }
+})();
+</script>
+
+<style>
+  .bangumi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .bangumi-card {
+    text-decoration: none;
+    color: inherit;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--code-bg, #f5f5f5);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .bangumi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+  .bangumi-cover {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    display: block;
+  }
+  .bangumi-cover-empty {
+    background: var(--border, #ddd);
+  }
+  .bangumi-info { padding: 8px; }
+  .bangumi-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bangumi-meta {
+    font-size: 12px;
+    color: var(--secondary, #888);
+    margin-top: 4px;
+    display: flex;
+    gap: 8px;
+  }
+  .calendar-empty { color: var(--secondary, #888); font-size: 14px; }
+  .loading { font-size: 14px; color: #888; font-weight: normal; }
+  .bangumi-more-btn {
+    display: inline-block;
+    padding: 8px 24px;
+    border-radius: 4px;
+    background: var(--code-bg, #f0f0f0);
+    color: inherit;
+    text-decoration: none;
+    font-size: 14px;
+    border: 1px solid var(--border, #ddd);
+  }
+  .bangumi-more-btn:hover {
+    background: var(--theme-hover, #e0e0e0);
+  }
+  @media (prefers-color-scheme: dark) {
+    .bangumi-card { background: #2a2a2a; box-shadow: none; }
+    .bangumi-card:hover { box-shadow: 0 4px 12px rgba(255,255,255,0.06); }
+    .bangumi-cover-empty { background: #444; }
+    .bangumi-more-btn { background: #333; border-color: #444; }
+    .bangumi-more-btn:hover { background: #444; }
+  }
+</style>
 {{- end -}}

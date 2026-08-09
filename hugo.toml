@@ -9,6 +9,7 @@ enableEmoji = true
   description = "个人随笔 · 日常照片 · 游戏 · 电影 · 动漫"
   author = "我"
   keywords = ["blog", "随笔", "照片", "游戏", "电影", "动漫"]
+  neodbToken = ""  # 本地运行: HUGO_PARAMS_NEODBTOKEN="你的Token" hugo server
 
   ShowReadingTime = true
   ShowShareButtons = false
@@ -22,9 +23,9 @@ enableEmoji = true
   disableScrollToTop = false
   comments = true
 
-  [params.twikoo]
-    envId = "https://jazzy-axolotl-6204fe.netlify.app/.netlify/functions/twikoo"
-    lang = "zh-CN"
+[params.twikoo]
+  envId = "https://jazzy-axolotl-6204fe.netlify.app/.netlify/functions/twikoo"
+  lang = "zh-CN"
 
   [params.homeInfoParams]
     Title = "你好，欢迎来到我的博客"
