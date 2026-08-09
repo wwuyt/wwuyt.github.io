@@ -70,6 +70,11 @@ enableEmoji = true
     url = "/neodb/"
     weight = 37
   [[menu.main]]
+    identifier = "steam"
+    name = "游戏"
+    url = "/steam/"
+    weight = 36
+  [[menu.main]]
     identifier = "about"
     name = "关于"
     url = "/about/"

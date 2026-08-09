@@ -1,0 +1,124 @@
+{{- define "main" -}}
+<article class="post-single">
+  <header class="post-header">
+    <h1 class="post-title">{{ .Title }}</h1>
+  </header>
+  <div class="post-content">{{ .Content }}</div>
+
+  {{- $d := .Site.Data.steam -}}
+  {{- if not $d -}}
+    <p class="steam-empty">暂无数据。先运行 <code>node scripts/fetch_steam.mjs</code> 生成 <code>data/steam.json</code>（需要 <code>STEAM_API_KEY</code> 和 <code>STEAM_ID</code> 环境变量）。</p>
+  {{- else -}}
+    {{- $player := $d.player -}}
+    {{- $total := $d.total_games -}}
+    {{- $hours := $d.total_playtime_hours -}}
+    {{- $updated := $d.updated_at -}}
+
+    <div class="steam-profile">
+      {{- if $player.avatar -}}<img class="steam-avatar" src="{{ $player.avatar }}" alt="" loading="lazy">{{- end -}}
+      <div class="steam-profile-info">
+        <div class="steam-name">{{ $player.name }}</div>
+        <div class="steam-stats">
+          <span>{{ $total }} 款游戏</span>
+          <span>总时长 {{ $hours }} 小时</span>
+        </div>
+        <a class="steam-link" href="{{ $player.profile_url }}" target="_blank" rel="noopener">查看 Steam 资料 →</a>
+      </div>
+    </div>
+
+    {{- if $d.games -}}
+    <h2 id="games">游戏库 <span class="steam-count">({{ $total }})</span></h2>
+    <div class="steam-list">
+      {{- range $d.games -}}
+      <a class="steam-row" href="https://store.steampowered.com/app/{{ .appid }}" target="_blank" rel="noopener">
+        <img class="steam-header" src="{{ .header }}" alt="" loading="lazy">
+        <div class="steam-row-info">
+          <div class="steam-game-name">{{ .name }}</div>
+          <div class="steam-game-meta">
+            {{- if gt .playtime_hours 0 -}}<span class="steam-playtime">⏱ {{ .playtime_text }}</span>{{- end -}}
+            {{- if .last_played -}}<span class="steam-last">最近游玩 {{ .last_played }}</span>{{- end -}}
+          </div>
+        </div>
+      </a>
+      {{- end -}}
+    </div>
+    <p class="steam-updated">数据更新于 {{ $updated }}</p>
+    {{- end -}}
+  {{- end -}}
+</article>
+
+<style>
+  .steam-empty { color: var(--secondary, #888); font-size: 14px; }
+  .steam-count { font-size: 14px; color: var(--secondary, #888); font-weight: normal; }
+
+  .steam-profile {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin: 24px 0;
+    padding: 16px;
+    border-radius: 12px;
+    background: var(--code-bg, #f5f5f5);
+    border: 1px solid var(--border, #ddd);
+  }
+  .steam-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .steam-profile-info { display: flex; flex-direction: column; gap: 4px; }
+  .steam-name { font-size: 18px; font-weight: 700; }
+  .steam-stats { font-size: 13px; color: var(--secondary, #888); display: flex; gap: 16px; }
+  .steam-link { font-size: 13px; color: var(--theme, #4a9eff); text-decoration: none; }
+  .steam-link:hover { text-decoration: underline; }
+
+  .steam-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .steam-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+    color: inherit;
+    padding: 10px;
+    border-radius: 10px;
+    background: var(--code-bg, #f5f5f5);
+    border: 1px solid var(--border, #ddd);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .steam-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .steam-header {
+    width: 160px;
+    height: 75px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+  .steam-row-info { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .steam-game-name {
+    font-size: 15px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .steam-game-meta { font-size: 12px; color: var(--secondary, #888); display: flex; gap: 14px; }
+  .steam-updated { font-size: 12px; color: var(--secondary, #888); margin-top: 8px; }
+
+  @media (max-width: 480px) {
+    .steam-header { width: 110px; height: 52px; }
+  }
+  @media (prefers-color-scheme: dark) {
+    .steam-profile, .steam-row { background: #2a2a2a; border-color: #3a3a3a; box-shadow: none; }
+    .steam-row:hover { box-shadow: 0 4px 12px rgba(255,255,255,0.06); }
+  }
+</style>
+{{- end -}}

@@ -55,7 +55,10 @@ jobs:
           HUGO_ENV: production
           HUGO_PARAMS_NEODBTOKEN: ${{ secrets.NEODB_TOKEN }}
           HUGO_PARAMS_BANGUMITOKEN: ${{ secrets.BANGUMI_TOKEN }}
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
+          STEAM_ID: ${{ secrets.STEAM_ID }}
         run: |
+          node scripts/fetch_steam.mjs || echo "⚠ Steam 数据拉取失败，跳过"
           hugo \
             --gc \
             --minify \
