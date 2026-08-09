@@ -1,0 +1,173 @@
+{{- define "main" -}}
+<article class="post-single">
+  <header class="post-header">
+    <h1 class="post-title">{{ .Title }}</h1>
+    {{- with .Description -}}
+    <div class="post-description">{{ . }}</div>
+    {{- end -}}
+  </header>
+
+  <div class="post-content">
+    {{ .Content }}
+    <p style="font-size:14px;color:#888;">数据由前端从 Bangumi 公开 API 实时加载。如果未显示，可能是网络问题。</p>
+  </div>
+
+  <h2 id="watching">在看 <span class="loading">加载中...</span></h2>
+  <div id="watching-grid" class="bangumi-grid"></div>
+
+  <h2 id="completed">已看 <span class="loading">加载中...</span></h2>
+  <div id="completed-grid" class="bangumi-grid"></div>
+
+  <h2 id="calendar">每日放送 <span class="loading">加载中...</span></h2>
+  <div id="calendar-list" class="bangumi-calendar"></div>
+</article>
+
+<script>
+(function() {
+  const USER_ID = '659185';
+  const API_BASE = 'https://api.bgm.tv/v0';
+
+  function renderLinks(items, emptyMsg, containerId) {
+    const el = document.getElementById(containerId);
+    if (!items || items.length === 0) { el.innerHTML = '<p class="calendar-empty">' + emptyMsg + '</p>'; return; }
+    let html = '';
+    items.forEach(function(c) {
+      const s = c.subject || {};
+      const img = (s.images && (s.images.medium || s.images.small || s.images.large)) || '';
+      const title = s.name_cn || s.name || '';
+      const rate = c.rate ? c.rate + '⭐' : '-';
+      html += '<a class="bangumi-card" href="https://bgm.tv/subject/' + c.subject_id + '" target="_blank" rel="noopener">' +
+        (img ? '<img class="bangumi-cover" src="' + img + '" alt="" loading="lazy">' : '') +
+        '<div class="bangumi-info"><div class="bangumi-title">' + title + '</div>' +
+        '<div class="bangumi-meta"><span class="bangumi-rate">' + rate + '</span>' +
+        '<span class="bangumi-ep">' + (c.ep_status||0) + '/' + (s.total_episodes||'?') + '话</span></div></div></a>';
+    });
+    el.innerHTML = html;
+  }
+
+  function renderCalendar(items, containerId) {
+    const el = document.getElementById(containerId);
+    const dayNames = {1:'周一',2:'周二',3:'周三',4:'周四',5:'周五',6:'周六',0:'周日'};
+    let html = '';
+    items.forEach(function(day) {
+      const name = day.weekday ? (day.weekday.cn || dayNames[day.weekday.id] || '') : '';
+      html += '<div class="calendar-day"><h3>' + name + '</h3><div class="calendar-items">';
+      if (day.items && day.items.length) {
+        day.items.forEach(function(it) {
+          const img = (it.images && (it.images.small || it.images.medium || it.images.large)) || '';
+          const title = it.name_cn || it.name || '';
+          html += '<a class="calendar-item" href="https://bgm.tv/subject/' + it.id + '" target="_blank" rel="noopener">' +
+            (img ? '<img src="' + img + '" alt="" loading="lazy">' : '') +
+            '<span class="calendar-item-name">' + title + '</span></a>';
+        });
+      } else {
+        html += '<span class="calendar-empty">暂无</span>';
+      }
+      html += '</div></div>';
+    });
+    el.innerHTML = html;
+  }
+
+  async function loadCollection(type, emptyMsg, containerId) {
+    try {
+      const r = await fetch(API_BASE + '/users/' + USER_ID + '/collections?subject_type=2&type=' + type + '&limit=50');
+      const d = await r.json();
+      renderLinks(d.data, emptyMsg, containerId);
+      document.querySelector('#' + containerId.replace('-grid','') + ' .loading').textContent = '(' + (d.data||[]).length + ')';
+    } catch(e) {
+      document.getElementById(containerId).innerHTML = '<p class="calendar-empty">加载失败，可能是网络问题</p>';
+    }
+  }
+
+  async function loadCalendar() {
+    try {
+      const r = await fetch(API_BASE + '/calendar');
+      const d = await r.json();
+      renderCalendar(d, 'calendar-list');
+      document.querySelector('#calendar .loading').textContent = '';
+    } catch(e) {
+      document.getElementById('calendar-list').innerHTML = '<p class="calendar-empty">加载失败</p>';
+    }
+  }
+
+  loadCollection(3, '暂无在看的动画', 'watching-grid');
+  loadCollection(2, '暂无已看的动画', 'completed-grid');
+  loadCalendar();
+})();
+</script>
+
+<style>
+  .bangumi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .bangumi-card {
+    text-decoration: none;
+    color: inherit;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--code-bg, #f5f5f5);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .bangumi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  }
+  .bangumi-cover {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    display: block;
+  }
+  .bangumi-info { padding: 8px; }
+  .bangumi-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bangumi-meta {
+    font-size: 12px;
+    color: var(--secondary, #888);
+    margin-top: 4px;
+    display: flex;
+    gap: 8px;
+  }
+  .bangumi-calendar {
+    display: grid;
+    gap: 24px;
+    margin: 24px 0;
+  }
+  .calendar-day h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    border-bottom: 1px solid var(--border, #ddd);
+    padding-bottom: 4px;
+  }
+  .calendar-items { display: flex; flex-wrap: wrap; gap: 8px; }
+  .calendar-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    color: inherit;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: var(--code-bg, #f5f5f5);
+    font-size: 13px;
+    max-width: 100%;
+  }
+  .calendar-item img { height: 40px; border-radius: 2px; object-fit: cover; }
+  .calendar-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .calendar-empty { color: var(--secondary, #888); font-size: 14px; }
+  .loading { font-size: 14px; color: #888; font-weight: normal; }
+  @media (prefers-color-scheme: dark) {
+    .bangumi-card, .calendar-item { background: #2a2a2a; box-shadow: none; }
+  }
+</style>
+{{- end -}}
