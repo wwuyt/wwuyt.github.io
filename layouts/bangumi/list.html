@@ -50,35 +50,53 @@
     el.innerHTML = html;
   }
 
+  function sleep(ms) { return new Promise(function(res){ setTimeout(res, ms); }); }
+
   async function loadCollection(type, emptyMsg, containerId, opts) {
     try {
-      const limitParam = (opts && opts.bigLimit) ? 200 : 50;
-      const r = await fetch(API_BASE + '/users/' + USER_ID + '/collections?subject_type=2&type=' + type + '&limit=' + limitParam);
-      const d = await r.json();
-      const total = (d.data && d.data.length) || 0;
-      const limit = (opts && opts.limit) || 0;
-      renderLinks(d.data, emptyMsg, containerId, limit);
-      const counter = document.querySelector('#' + containerId.replace('-grid','') + ' .loading');
-      if (counter) counter.textContent = '(' + total + ')';
-      if (opts && opts.moreWrap && total > limit) {
-        const wrap = document.getElementById(opts.moreWrap);
-        const a = document.getElementById(opts.moreLink);
-        if (wrap) wrap.style.display = 'block';
-        if (a) {
-          const filter = opts.moreFilter || '';
-          a.href = BGM_USER_URL + (filter ? '?' + filter : '');
+      let allItems = [];
+      let offset = 0;
+      var pageSize = 50;
+      var maxPages = 10;
+      var page = 0;
+      while (page < maxPages) {
+        var url = API_BASE + '/users/' + USER_ID + '/collections?subject_type=2&type=' + type + '&limit=' + pageSize + '&offset=' + offset;
+        var r = await fetch(url);
+        if (!r.ok) {
+          if (page === 0) throw new Error('API error ' + r.status);
+          break;
+        }
+        var d = await r.json();
+        if (!d.data || d.data.length === 0) break;
+        allItems = allItems.concat(d.data);
+        if (d.data.length < pageSize) break;
+        offset += pageSize;
+        page++;
+        if (page < maxPages) await sleep(1100);
+      }
+      var total = allItems.length;
+      var displayLimit = (opts && opts.limit) || 0;
+      renderLinks(allItems, emptyMsg, containerId, displayLimit);
+      var counterEl = document.querySelector('#' + containerId.replace('-grid','') + ' .loading');
+      if (counterEl) counterEl.textContent = '(' + total + ')';
+      if (opts && opts.moreWrap && total > displayLimit) {
+        var wrapEl = document.getElementById(opts.moreWrap);
+        var linkEl = document.getElementById(opts.moreLink);
+        if (wrapEl) wrapEl.style.display = 'block';
+        if (linkEl) {
+          var filterStr = opts.moreFilter || '';
+          linkEl.href = BGM_USER_URL + (filterStr ? '?' + filterStr : '');
         }
       }
     } catch(e) {
-      const el = document.getElementById(containerId);
-      if (el) el.innerHTML = '<p class="calendar-empty">加载失败，可能是网络问题</p>';
+      var el = document.getElementById(containerId);
+      if (el) el.innerHTML = '<p class="calendar-empty">加载失败，可能是网络或 API 问题</p>';
     }
   }
 
   loadCollection(3, '暂无在看的动画', 'watching-grid', {});
   loadCollection(2, '暂无已看的动画', 'completed-grid', {
     limit: 10,
-    bigLimit: true,
     moreWrap: 'completed-more-wrap',
     moreLink: 'completed-more-link',
     moreFilter: '&tag=&filter=collect&orderby=rate'
