@@ -10,6 +10,9 @@
     <p class="steam-empty">暂无数据。先运行 <code>node scripts/fetch_steam.mjs</code> 生成 <code>data/steam.json</code>（需要 <code>STEAM_API_KEY</code> 和 <code>STEAM_ID</code> 环境变量）。</p>
   {{- else -}}
     {{- $p := $d.player -}}
+    {{- $s := $d.stats -}}
+    {{- $recent := $d.recent_games -}}
+    {{- $heatmap := $d.heatmap -}}
     {{- $games := $d.games -}}
 
     <div class="steam-window">
@@ -22,26 +25,73 @@
       </nav>
 
       <div class="steam-body">
-        <aside class="steam-side">
-          <div class="steam-profile-card">
-            {{- if $p.avatar -}}<img class="steam-avatar" src="{{ $p.avatar }}" alt="" loading="lazy">{{- end -}}
+        <!-- 资料 Hero -->
+        <div class="steam-hero">
+          <img class="steam-avatar" src="{{ $p.avatar }}" alt="" loading="lazy">
+          <div class="steam-hero-info">
             <div class="steam-display-name">{{ $p.name }}</div>
-            <div class="steam-level-box">
+            <div class="steam-level-row">
               <span class="steam-level-num">{{ $p.level }}</span>
               <div class="steam-level-bar"><div class="steam-level-fill" style="width:{{ mod $p.level 100 }}%"></div></div>
-              <span class="steam-level-label">等级</span>
+              <span class="steam-level-label">Steam 等级</span>
             </div>
             <div class="steam-stats">
-              <div class="steam-stat"><b>{{ $d.total_games }}</b>款游戏</div>
-              <div class="steam-stat"><b>{{ $d.total_playtime_hours }}</b>小时</div>
+              <div class="steam-stat"><b>{{ $s.total_games }}</b><span>款游戏</span></div>
+              <div class="steam-stat"><b>{{ $s.total_playtime_hours }}</b><span>总时长</span></div>
+              <div class="steam-stat"><b>{{ $s.recent_playtime_text }}</b><span>近两周</span></div>
             </div>
-            <a class="steam-profile-link" href="{{ $p.profile_url }}" target="_blank" rel="noopener">查看 Steam 资料 →</a>
           </div>
-        </aside>
+          <a class="steam-profile-link" href="{{ $p.profile_url }}" target="_blank" rel="noopener">查看 Steam 资料 →</a>
+        </div>
 
-        <section class="steam-library">
+        <!-- 活跃度热力图 -->
+        <div class="steam-section">
+          <div class="steam-section-head">
+            <h2 class="steam-section-title">游玩活跃度 <span class="steam-section-sub">365 天</span></h2>
+            <div class="steam-legend"><span>少</span>
+              <i class="lvl0"></i><i class="lvl1"></i><i class="lvl2"></i><i class="lvl3"></i><i class="lvl4"></i>
+              <span>多</span>
+            </div>
+          </div>
+          {{- if $heatmap -}}
+          <div class="steam-heatmap">
+            {{- range $heatmap -}}
+              {{- $m := .minutes -}}
+              {{- if eq $m 0 -}}<span class="steam-heat-cell lvl0" title="{{ .date }}: 0 分钟"></span>
+              {{- else if lt $m 30 -}}<span class="steam-heat-cell lvl1" title="{{ .date }}: {{ $m }} 分钟"></span>
+              {{- else if lt $m 120 -}}<span class="steam-heat-cell lvl2" title="{{ .date }}: {{ $m }} 分钟"></span>
+              {{- else if lt $m 300 -}}<span class="steam-heat-cell lvl3" title="{{ .date }}: {{ $m }} 分钟"></span>
+              {{- else -}}<span class="steam-heat-cell lvl4" title="{{ .date }}: {{ $m }} 分钟"></span>
+              {{- end -}}
+            {{- end -}}
+          </div>
+          {{- else -}}
+          <p class="steam-section-empty">暂无活跃度数据，每次构建时自动记录。</p>
+          {{- end -}}
+        </div>
+
+        <!-- 最近游玩 -->
+        <div class="steam-section">
+          <h2 class="steam-section-title">最近游玩 <span class="steam-section-sub">近两周</span></h2>
+          {{- if $recent -}}
+          <div class="steam-recent">
+            {{- range $recent -}}
+            <a class="steam-recent-card" href="https://store.steampowered.com/app/{{ .appid }}" target="_blank" rel="noopener">
+              <img class="steam-recent-art" src="{{ .header }}" alt="" loading="lazy" onerror="this.style.display='none'">
+              <div class="steam-recent-name" title="{{ .name }}">{{ .name }}</div>
+              <div class="steam-recent-time">{{ .playtime_2weeks_text }}</div>
+            </a>
+            {{- end -}}
+          </div>
+          {{- else -}}
+          <p class="steam-section-empty">近两周暂无游玩记录。</p>
+          {{- end -}}
+        </div>
+
+        <!-- 游戏库 -->
+        <div class="steam-section">
           <div class="steam-toolbar">
-            <h2 class="steam-lib-title">游戏库 <span class="steam-lib-count">{{ len $games }}</span></h2>
+            <h2 class="steam-section-title">游戏库 <span class="steam-section-sub">{{ len $games }}</span></h2>
             <div class="steam-toolbar-actions">
               <input id="steam-search" class="steam-search" type="search" placeholder="按名称搜索…">
               <select id="steam-sort" class="steam-sort">
@@ -51,7 +101,6 @@
               </select>
             </div>
           </div>
-
           <div id="steam-grid" class="steam-grid">
             {{- range $games -}}
             <a class="steam-card" href="https://store.steampowered.com/app/{{ .appid }}" target="_blank" rel="noopener"
@@ -67,9 +116,9 @@
             </a>
             {{- end -}}
           </div>
+        </div>
 
-          <p class="steam-updated">数据更新于 {{ $d.updated_at }}</p>
-        </section>
+        <p class="steam-updated">数据更新于 {{ $d.updated_at }}</p>
       </div>
     </div>
   {{- end -}}
@@ -131,111 +180,97 @@
     background: #171a21;
     border-bottom: 1px solid rgba(0,0,0,0.4);
   }
-  .steam-logo {
-    font-weight: 800;
-    font-size: 15px;
-    letter-spacing: 1px;
-    color: #fff;
-  }
+  .steam-logo { font-weight: 800; font-size: 15px; letter-spacing: 1px; color: #fff; }
   .steam-logo-sub { font-size: 10px; vertical-align: super; color: #8f98a0; }
-  .steam-nav-link {
-    color: #8f98a0;
-    text-decoration: none;
-    font-size: 13px;
-  }
+  .steam-nav-link { color: #8f98a0; text-decoration: none; font-size: 13px; }
   .steam-nav-link:hover { color: #fff; }
   .steam-nav-link.is-active { color: #fff; border-bottom: 2px solid #66c0f4; padding-bottom: 8px; }
-  .steam-nav-user {
-    margin-left: auto;
-    color: #c7d5e0;
-    font-size: 13px;
-  }
+  .steam-nav-user { margin-left: auto; color: #c7d5e0; font-size: 13px; }
 
-  /* 主体两栏 */
-  .steam-body {
+  .steam-body { padding: 20px; display: flex; flex-direction: column; gap: 22px; }
+
+  /* 资料 Hero */
+  .steam-hero {
     display: flex;
+    align-items: center;
     gap: 20px;
+    background: linear-gradient(135deg, #16202d, #1f3550);
+    border: 1px solid rgba(102,192,244,0.15);
+    border-radius: 8px;
     padding: 20px;
   }
-  .steam-side { width: 240px; flex-shrink: 0; }
-  .steam-library { flex: 1; min-width: 0; }
-
-  /* 左侧资料 */
-  .steam-profile-card {
-    background: #16202d;
-    border-radius: 8px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    border: 1px solid rgba(102,192,244,0.15);
-  }
   .steam-avatar {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
+    width: 96px;
+    height: 96px;
+    border-radius: 8px;
     border: 3px solid #2a475e;
     object-fit: cover;
   }
-  .steam-display-name {
-    color: #fff;
-    font-weight: 700;
-    font-size: 16px;
-    margin: 10px 0 8px;
-  }
-  .steam-level-box {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    margin-bottom: 12px;
-  }
-  .steam-level-num {
-    font-weight: 800;
-    font-size: 18px;
-    color: #66c0f4;
-    min-width: 26px;
-  }
-  .steam-level-bar {
-    flex: 1;
-    height: 6px;
-    background: #0e141b;
-    border-radius: 3px;
-    overflow: hidden;
-  }
+  .steam-hero-info { flex: 1; min-width: 0; }
+  .steam-display-name { color: #fff; font-weight: 700; font-size: 20px; margin-bottom: 10px; }
+  .steam-level-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .steam-level-num { font-weight: 800; font-size: 22px; color: #66c0f4; min-width: 30px; }
+  .steam-level-bar { flex: 1; max-width: 240px; height: 6px; background: #0e141b; border-radius: 3px; overflow: hidden; }
   .steam-level-fill { height: 100%; background: linear-gradient(90deg, #2a475e, #66c0f4); }
-  .steam-level-label { font-size: 11px; color: #8f98a0; }
-  .steam-stats {
-    display: flex;
-    gap: 18px;
-    justify-content: center;
-    width: 100%;
-    padding: 10px 0;
-    border-top: 1px solid #2a3f54;
-    border-bottom: 1px solid #2a3f54;
-    margin-bottom: 12px;
-  }
-  .steam-stat { font-size: 12px; color: #8f98a0; }
-  .steam-stat b { display: block; color: #fff; font-size: 16px; }
-  .steam-profile-link {
-    font-size: 12px;
-    color: #66c0f4;
-    text-decoration: none;
-  }
+  .steam-level-label { font-size: 12px; color: #8f98a0; }
+  .steam-stats { display: flex; gap: 28px; }
+  .steam-stat { display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: #8f98a0; }
+  .steam-stat b { color: #fff; font-size: 18px; }
+  .steam-profile-link { font-size: 13px; color: #66c0f4; text-decoration: none; white-space: nowrap; }
   .steam-profile-link:hover { text-decoration: underline; }
 
-  /* 游戏库 */
-  .steam-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
+  /* 区块 */
+  .steam-section { border: 1px solid rgba(102,192,244,0.12); border-radius: 8px; padding: 16px 18px; background: rgba(22,32,45,0.6); }
+  .steam-section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .steam-section-title { color: #fff; font-size: 16px; margin: 0; }
+  .steam-section-sub { color: #66c0f4; font-size: 13px; font-weight: normal; }
+  .steam-section-empty { color: #5d6f7e; font-size: 13px; margin: 0; }
+
+  /* 热力图 */
+  .steam-legend { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #8f98a0; }
+  .steam-legend i { width: 11px; height: 11px; border-radius: 2px; }
+  .steam-heatmap {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, 11px);
+    grid-auto-columns: 11px;
+    gap: 3px;
+    overflow-x: auto;
+    padding-bottom: 4px;
   }
-  .steam-lib-title { color: #fff; font-size: 18px; margin: 0; }
-  .steam-lib-count { color: #66c0f4; font-size: 14px; }
+  .steam-heat-cell { width: 11px; height: 11px; border-radius: 2px; background: #2a3f54; }
+  .lvl1 { background: #16425e; }
+  .lvl2 { background: #1f6f9b; }
+  .lvl3 { background: #2a9fd6; }
+  .lvl4 { background: #66c0f4; }
+
+  /* 最近游玩 */
+  .steam-recent { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+  .steam-recent-card {
+    flex: 0 0 150px;
+    background: #16202d;
+    border: 1px solid #2f4a63;
+    border-radius: 6px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s;
+  }
+  .steam-recent-card:hover { border-color: #66c0f4; }
+  .steam-recent-art { width: 100%; aspect-ratio: 460/215; object-fit: cover; display: block; background: #0e141b; }
+  .steam-recent-name {
+    padding: 8px 10px 2px;
+    font-size: 12px;
+    color: #fff;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .steam-recent-time { padding: 0 10px 8px; font-size: 11px; color: #66c0f4; }
+
+  /* 游戏库 */
+  .steam-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   .steam-toolbar-actions { display: flex; gap: 8px; }
   .steam-search {
     background: #16202d;
@@ -247,7 +282,7 @@
     width: 180px;
   }
   .steam-search::placeholder { color: #5d6f7e; }
-  .steam-search:focus { outline: none; border-color: #66c0f4; }
+  .steam-search:focus, .steam-sort:focus { outline: none; border-color: #66c0f4; }
   .steam-sort {
     background: #16202d;
     border: 1px solid #2f4a63;
@@ -256,13 +291,8 @@
     padding: 6px 8px;
     font-size: 13px;
   }
-  .steam-sort:focus { outline: none; border-color: #66c0f4; }
 
-  .steam-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 14px;
-  }
+  .steam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
   .steam-card {
     background: #16202d;
     border-radius: 6px;
@@ -272,41 +302,18 @@
     border: 1px solid transparent;
     transition: transform 0.15s, border-color 0.15s;
   }
-  .steam-card:hover {
-    transform: translateY(-2px);
-    border-color: #66c0f4;
-  }
-  .steam-card-art {
-    width: 100%;
-    aspect-ratio: 460/215;
-    object-fit: cover;
-    display: block;
-    background: #0e141b;
-  }
+  .steam-card:hover { transform: translateY(-2px); border-color: #66c0f4; }
+  .steam-card-art { width: 100%; aspect-ratio: 460/215; object-fit: cover; display: block; background: #0e141b; }
   .steam-card-meta { padding: 10px 12px; }
-  .steam-card-name {
-    color: #fff;
-    font-size: 13px;
-    font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .steam-card-sub {
-    display: flex;
-    gap: 10px;
-    margin-top: 4px;
-    font-size: 12px;
-    color: #8f98a0;
-  }
+  .steam-card-name { color: #fff; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .steam-card-sub { display: flex; gap: 10px; margin-top: 4px; font-size: 12px; color: #8f98a0; }
   .steam-card-time { color: #66c0f4; }
 
-  .steam-updated { font-size: 12px; color: #5d6f7e; margin-top: 14px; }
+  .steam-updated { font-size: 12px; color: #5d6f7e; margin-top: 4px; }
 
-  @media (max-width: 720px) {
-    .steam-body { flex-direction: column; }
-    .steam-side { width: 100%; }
-    .steam-search { width: 100%; }
+  @media (max-width: 640px) {
+    .steam-hero { flex-direction: column; text-align: center; }
+    .steam-stats { justify-content: center; }
     .steam-toolbar-actions { width: 100%; }
     .steam-search, .steam-sort { flex: 1; }
   }
