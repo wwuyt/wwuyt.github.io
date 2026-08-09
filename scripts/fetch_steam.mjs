@@ -9,8 +9,11 @@
  * 用法：
  *   STEAM_API_KEY=xxx STEAM_ID=xxx node scripts/fetch_steam.mjs
  */
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const KEY = process.env.STEAM_API_KEY;
 const STEAM_ID = process.env.STEAM_ID;
