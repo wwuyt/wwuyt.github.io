@@ -23,7 +23,7 @@ enableEmoji = true
   comments = true
 
   [params.twikoo]
-    envId = "https://my-repository-inky-mu.vercel.app/"
+    envId = "https://jazzy-axolotl-6204fe.netlify.app/.netlify/functions/twikoo"
     lang = "zh-CN"
 
   [params.homeInfoParams]
