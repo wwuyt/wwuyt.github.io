@@ -72,24 +72,53 @@
     el.innerHTML = html;
   }
 
-  async function loadShelf(shelfType, emptyMsg, containerId, opts) {
+  var CACHE_TTL = 30 * 60 * 1000; // 30 分钟
+
+  function cacheRead(shelfType) {
     try {
-      var url = API_BASE + '/me/shelf/' + shelfType + '?category=movie&page=1&page_size=50';
+      var raw = localStorage.getItem('neodb_shelf_' + shelfType);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      if (!obj || Date.now() - obj.ts > CACHE_TTL) return null;
+      return obj.data;
+    } catch (e) { return null; }
+  }
+
+  function cacheWrite(shelfType, data) {
+    try {
+      localStorage.setItem('neodb_shelf_' + shelfType, JSON.stringify({ ts: Date.now(), data: data }));
+    } catch (e) { /* 忽略存储失败 */ }
+  }
+
+  function renderShelf(shelfType, emptyMsg, containerId, opts, payload) {
+    var items = payload.items || [];
+    var count = payload.count || items.length;
+    var limit = (opts && opts.limit > 0) ? opts.limit : items.length;
+    renderCards(items.slice(0, limit), containerId, emptyMsg);
+    var counterEl = document.querySelector('#' + containerId.replace('-grid', '') + ' .loading');
+    if (counterEl) counterEl.textContent = '(' + count + ')';
+    if (opts && opts.moreWrap && count > limit) {
+      var wrapEl = document.getElementById(opts.moreWrap);
+      if (wrapEl) wrapEl.style.display = 'block';
+    }
+  }
+
+  async function loadShelf(shelfType, emptyMsg, containerId, opts) {
+    var cached = cacheRead(shelfType);
+    if (cached) {
+      renderShelf(shelfType, emptyMsg, containerId, opts, cached);
+      return;
+    }
+    try {
+      var url = API_BASE + '/me/shelf/' + shelfType + '?category=movie&page=1&page_size=10';
       var r = await fetch(url, {
         headers: { 'Authorization': 'Bearer ' + NEODB_TOKEN }
       });
       if (!r.ok) throw new Error('API error ' + r.status);
       var d = await r.json();
-      var items = d.data || [];
-      var limit = (opts && opts.limit > 0) ? opts.limit : items.length;
-      renderCards(items.slice(0, limit), containerId, emptyMsg);
-      var counterEl = document.querySelector('#' + containerId.replace('-grid', '') + ' .loading');
-      if (counterEl) counterEl.textContent = '(' + (d.count || items.length) + ')';
-
-      if (opts && opts.moreWrap && d.count > limit) {
-        var wrapEl = document.getElementById(opts.moreWrap);
-        if (wrapEl) wrapEl.style.display = 'block';
-      }
+      var payload = { items: d.data || [], count: d.count || (d.data ? d.data.length : 0) };
+      cacheWrite(shelfType, payload);
+      renderShelf(shelfType, emptyMsg, containerId, opts, payload);
     } catch(e) {
       var el = document.getElementById(containerId);
       if (el) el.innerHTML = '<p class="calendar-empty">加载失败，请检查网络或 Token 配置</p>';
