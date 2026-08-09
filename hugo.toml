@@ -25,8 +25,8 @@ enableEmoji = true
   [params.giscus]
     repo = "wwuyt/blog-comments"
     repoID = "R_kgDOTy17pA"
-    category = "General"
-    categoryID = "DIC_kwDOTy17pM4DC-ZU"
+    category = "Announcements"
+    categoryID = "DIC_kwDOTy17pM4DC-ZT"
     mapping = "pathname"
     strict = "0"
     reactionsEnabled = "1"
