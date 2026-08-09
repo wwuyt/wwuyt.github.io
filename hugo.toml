@@ -10,6 +10,7 @@ enableEmoji = true
   author = "我"
   keywords = ["blog", "随笔", "照片", "游戏", "电影", "动漫"]
   neodbToken = ""  # 本地运行: HUGO_PARAMS_NEODBTOKEN="你的Token" hugo server
+  bangumiToken = ""  # 本地运行: HUGO_PARAMS_BANGUMITOKEN="你的Token" hugo server
 
   ShowReadingTime = true
   ShowShareButtons = false

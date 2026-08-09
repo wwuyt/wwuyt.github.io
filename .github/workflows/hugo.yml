@@ -54,6 +54,7 @@ jobs:
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production
           HUGO_PARAMS_NEODBTOKEN: ${{ secrets.NEODB_TOKEN }}
+          HUGO_PARAMS_BANGUMITOKEN: ${{ secrets.BANGUMI_TOKEN }}
         run: |
           hugo \
             --gc \

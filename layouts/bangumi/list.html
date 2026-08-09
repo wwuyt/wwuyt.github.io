@@ -50,7 +50,7 @@
     el.innerHTML = html;
   }
 
-  const BGM_TOKEN = 'LnsF1dkMIrcslaz43RQMe3vtbmTvLEshpElQOrDA';
+  const BGM_TOKEN = '{{ .Site.Params.bangumiToken }}';
 
   function fetchOpts() {
     return { headers: { 'Authorization': 'Bearer ' + BGM_TOKEN } };
