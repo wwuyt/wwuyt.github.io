@@ -22,6 +22,19 @@ enableEmoji = true
   disableScrollToTop = false
   comments = true
 
+  [params.giscus]
+    repo = "wwuyt/blog-comments"
+    repoID = "R_kgDOTy17pA"
+    category = "General"
+    categoryID = "DIC_kwDOTy17pM4DC-ZU"
+    mapping = "pathname"
+    strict = "0"
+    reactionsEnabled = "1"
+    emitMetadata = "0"
+    inputPosition = "bottom"
+    theme = "preferred_color_scheme"
+    lang = "zh-CN"
+
   [params.homeInfoParams]
     Title = "你好，欢迎来到我的博客"
     Content = "这里记录一些生活随笔、日常照片，还有最近在玩的游戏、看的电影和动漫。"
