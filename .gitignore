@@ -1,0 +1,17 @@
+# Hugo 生成目录
+public/
+resources/
+.hugo_build.lock
+
+# 系统/编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# 依赖
+node_modules/
+
+# 日志
+*.log
