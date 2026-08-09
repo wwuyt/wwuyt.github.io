@@ -9,11 +9,15 @@
   <h2 id="wishlist">想看 <span class="loading">加载中...</span></h2>
   <div id="wishlist-grid" class="bangumi-grid"></div>
 
+  <div id="wishlist-more-wrap" style="display:none;margin-top:16px;">
+    <a id="wishlist-more-link" class="bangumi-more-btn" href="https://neodb.social/users/NeuroRead/" target="_blank" rel="noopener">在 NeoDB 查看更多 →</a>
+  </div>
+
   <h2 id="completed">已看 <span class="loading">加载中...</span></h2>
   <div id="completed-grid" class="bangumi-grid"></div>
 
   <div id="completed-more-wrap" style="display:none;margin-top:16px;">
-    <a id="completed-more-link" class="bangumi-more-btn" href="https://neodb.social/users/NeuroRead/shelf?category=movie" target="_blank" rel="noopener">在 NeoDB 查看更多 →</a>
+    <a id="completed-more-link" class="bangumi-more-btn" href="https://neodb.social/users/NeuroRead/" target="_blank" rel="noopener">在 NeoDB 查看更多 →</a>
   </div>
 </article>
 
@@ -77,11 +81,12 @@
       if (!r.ok) throw new Error('API error ' + r.status);
       var d = await r.json();
       var items = d.data || [];
-      renderCards(items, containerId, emptyMsg);
+      var limit = (opts && opts.limit > 0) ? opts.limit : items.length;
+      renderCards(items.slice(0, limit), containerId, emptyMsg);
       var counterEl = document.querySelector('#' + containerId.replace('-grid', '') + ' .loading');
       if (counterEl) counterEl.textContent = '(' + (d.count || items.length) + ')';
 
-      if (opts && opts.moreWrap && d.count > items.length) {
+      if (opts && opts.moreWrap && d.count > limit) {
         var wrapEl = document.getElementById(opts.moreWrap);
         if (wrapEl) wrapEl.style.display = 'block';
       }
@@ -99,10 +104,15 @@
     document.querySelectorAll('.bangumi-grid').forEach(function(el) {
       el.innerHTML = '<p class="calendar-empty">请在 <a href="https://neodb.social/developer/" target="_blank" rel="noopener">NeoDB Developer</a> 创建应用获取 Token，然后在 <code>hugo.toml</code> 的 <code>[params]</code> 中添加 <code>neodbToken = "你的Token"</code>。</p>';
     });
+    document.getElementById('wishlist-more-wrap').style.display = 'none';
     document.getElementById('completed-more-wrap').style.display = 'none';
   } else {
-    loadShelf('wishlist', '暂无想看的电影', 'wishlist-grid');
+    loadShelf('wishlist', '暂无想看的电影', 'wishlist-grid', {
+      limit: 10,
+      moreWrap: 'wishlist-more-wrap'
+    });
     loadShelf('complete', '暂无已看的电影', 'completed-grid', {
+      limit: 10,
       moreWrap: 'completed-more-wrap'
     });
   }
