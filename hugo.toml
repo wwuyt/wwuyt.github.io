@@ -63,6 +63,11 @@ enableEmoji = true
     url = "/bangumi/"
     weight = 35
   [[menu.main]]
+    identifier = "neodb"
+    name = "影视"
+    url = "/neodb/"
+    weight = 37
+  [[menu.main]]
     identifier = "about"
     name = "关于"
     url = "/about/"
