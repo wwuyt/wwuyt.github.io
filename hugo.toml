@@ -58,6 +58,11 @@ enableEmoji = true
     url = "/tags/"
     weight = 30
   [[menu.main]]
+    identifier = "bangumi"
+    name = "追番"
+    url = "/bangumi/"
+    weight = 35
+  [[menu.main]]
     identifier = "about"
     name = "关于"
     url = "/about/"
