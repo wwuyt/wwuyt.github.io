@@ -50,6 +50,12 @@
     el.innerHTML = html;
   }
 
+  const BGM_TOKEN = 'LnsF1dkMIrcslaz43RQMe3vtbmTvLEshpElQOrDA';
+
+  function fetchOpts() {
+    return { headers: { 'Authorization': 'Bearer ' + BGM_TOKEN } };
+  }
+
   function sleep(ms) { return new Promise(function(res){ setTimeout(res, ms); }); }
 
   async function loadCollection(type, emptyMsg, containerId, opts) {
@@ -61,7 +67,7 @@
       var page = 0;
       while (page < maxPages) {
         var url = API_BASE + '/users/' + USER_ID + '/collections?subject_type=2&type=' + type + '&limit=' + pageSize + '&offset=' + offset;
-        var r = await fetch(url);
+        var r = await fetch(url, fetchOpts());
         if (!r.ok) {
           if (page === 0) throw new Error('API error ' + r.status);
           break;
@@ -72,7 +78,7 @@
         if (d.data.length < pageSize) break;
         offset += pageSize;
         page++;
-        if (page < maxPages) await sleep(1100);
+        if (page < maxPages) await sleep(800);
       }
       var total = allItems.length;
       var displayLimit = (opts && opts.limit) || 0;
