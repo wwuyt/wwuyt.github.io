@@ -22,17 +22,8 @@ enableEmoji = true
   disableScrollToTop = false
   comments = true
 
-  [params.giscus]
-    repo = "wwuyt/blog-comments"
-    repoID = "R_kgDOTy17pA"
-    category = "Announcements"
-    categoryID = "DIC_kwDOTy17pM4DC-ZT"
-    mapping = "pathname"
-    strict = "0"
-    reactionsEnabled = "1"
-    emitMetadata = "0"
-    inputPosition = "bottom"
-    theme = "preferred_color_scheme"
+  [params.twikoo]
+    envId = "https://my-repository-inky-mu.vercel.app/"
     lang = "zh-CN"
 
   [params.homeInfoParams]
