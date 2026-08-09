@@ -102,7 +102,7 @@
             </div>
           </div>
           <div id="steam-grid" class="steam-grid">
-            {{- range $games -}}
+            {{- range first 12 $games -}}
             <a class="steam-card" href="https://store.steampowered.com/app/{{ .appid }}" target="_blank" rel="noopener"
                data-name="{{ lower .name }}" data-playtime="{{ .playtime_hours }}" data-last="{{ .last_played }}">
               <img class="steam-card-art" src="{{ .header }}" alt="{{ .name }}" loading="lazy" onerror="this.style.display='none'">
@@ -116,6 +116,9 @@
             </a>
             {{- end -}}
           </div>
+          {{- if gt (len $games) 12 -}}
+          <p class="steam-more"><a href="https://steamcommunity.com/profiles/{{ $p.steamid }}/games/" target="_blank" rel="noopener">查看完整游戏库 ({{ len $games }}) →</a></p>
+          {{- end -}}
         </div>
 
         <p class="steam-updated">数据更新于 {{ $d.updated_at }}</p>
@@ -162,7 +165,9 @@
   .steam-empty { color: var(--secondary, #888); font-size: 14px; }
 
   .steam-window {
-    margin: 24px 0;
+    width: min(75vw, 1400px);
+    margin-left: 50%;
+    transform: translateX(-50%);
     border-radius: 10px;
     overflow: hidden;
     background: #1b2838;
@@ -292,7 +297,10 @@
     font-size: 13px;
   }
 
-  .steam-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .steam-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .steam-more { margin: 14px 0 0; text-align: center; }
+  .steam-more a { color: #66c0f4; text-decoration: none; font-size: 13px; }
+  .steam-more a:hover { text-decoration: underline; }
   .steam-card {
     background: #16202d;
     border-radius: 6px;
@@ -311,6 +319,10 @@
 
   .steam-updated { font-size: 12px; color: #5d6f7e; margin-top: 4px; }
 
+  @media (max-width: 1024px) {
+    .steam-window { width: 100%; margin-left: 0; transform: none; }
+    .steam-grid { grid-template-columns: repeat(2, 1fr); }
+  }
   @media (max-width: 640px) {
     .steam-hero { flex-direction: column; text-align: center; }
     .steam-stats { justify-content: center; }
