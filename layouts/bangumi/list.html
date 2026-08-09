@@ -58,7 +58,48 @@
 
   function sleep(ms) { return new Promise(function(res){ setTimeout(res, ms); }); }
 
+  var CACHE_TTL = 30 * 60 * 1000; // 30 分钟
+
+  function cacheRead(type) {
+    try {
+      var raw = localStorage.getItem('bgm_collection_' + type);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      if (!obj || Date.now() - obj.ts > CACHE_TTL) return null;
+      return obj.data;
+    } catch (e) { return null; }
+  }
+
+  function cacheWrite(type, data) {
+    try {
+      localStorage.setItem('bgm_collection_' + type, JSON.stringify({ ts: Date.now(), data: data }));
+    } catch (e) { /* 忽略存储失败 */ }
+  }
+
+  function renderCollection(type, emptyMsg, containerId, opts, payload) {
+    var items = payload.items || [];
+    var total = payload.total || items.length;
+    var displayLimit = (opts && opts.limit) > 0 ? opts.limit : items.length;
+    renderLinks(items, emptyMsg, containerId, 0);
+    var counterEl = document.querySelector('#' + containerId.replace('-grid','') + ' .loading');
+    if (counterEl) counterEl.textContent = '(' + total + ')';
+    if (opts && opts.moreWrap && total > displayLimit) {
+      var wrapEl = document.getElementById(opts.moreWrap);
+      var linkEl = document.getElementById(opts.moreLink);
+      if (wrapEl) wrapEl.style.display = 'block';
+      if (linkEl) {
+        var filterStr = opts.moreFilter || '';
+        linkEl.href = BGM_USER_URL + (filterStr ? '?' + filterStr : '');
+      }
+    }
+  }
+
   async function loadCollection(type, emptyMsg, containerId, opts) {
+    var cached = cacheRead(type);
+    if (cached) {
+      renderCollection(type, emptyMsg, containerId, opts, cached);
+      return;
+    }
     try {
       var displayLimit = (opts && opts.limit) > 0 ? opts.limit : 50;
       var url = API_BASE + '/users/' + USER_ID + '/collections?subject_type=2&type=' + type + '&limit=' + displayLimit;
@@ -66,19 +107,9 @@
       if (!r.ok) throw new Error('API error ' + r.status);
       var d = await r.json();
       var total = (d.total > 0) ? d.total : ((d.data && d.data.length) || 0);
-      var items = d.data || [];
-      renderLinks(items, emptyMsg, containerId, 0);
-      var counterEl = document.querySelector('#' + containerId.replace('-grid','') + ' .loading');
-      if (counterEl) counterEl.textContent = '(' + total + ')';
-      if (opts && opts.moreWrap && total > displayLimit) {
-        var wrapEl = document.getElementById(opts.moreWrap);
-        var linkEl = document.getElementById(opts.moreLink);
-        if (wrapEl) wrapEl.style.display = 'block';
-        if (linkEl) {
-          var filterStr = opts.moreFilter || '';
-          linkEl.href = BGM_USER_URL + (filterStr ? '?' + filterStr : '');
-        }
-      }
+      var payload = { items: d.data || [], total: total };
+      cacheWrite(type, payload);
+      renderCollection(type, emptyMsg, containerId, opts, payload);
     } catch(e) {
       var el = document.getElementById(containerId);
       if (el) el.innerHTML = '<p class="calendar-empty">加载失败，可能是网络或 API 问题</p>';
