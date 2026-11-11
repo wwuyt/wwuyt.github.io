@@ -9,6 +9,7 @@ Thumbs.db
 .idea/
 .vscode/
 .obsidian/
+.openidea/
 .trash/
 *.swp
 
