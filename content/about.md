@@ -14,6 +14,6 @@ comments: false
 - 基于 [Hugo](https://gohugo.io/) 构建
 - 使用 [PaperMod](https://github.com/adityatelange/hugo-PaperMod) 主题
 - 托管在 GitHub Pages
-- 评论使用 Giscus
+- 评论使用 [Twikoo](https://twikoo.js.org/)，自建在 Netlify
 
 欢迎留言交流！
