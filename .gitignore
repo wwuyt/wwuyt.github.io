@@ -8,6 +8,8 @@ resources/
 Thumbs.db
 .idea/
 .vscode/
+.obsidian/
+.trash/
 *.swp
 
 # 依赖
