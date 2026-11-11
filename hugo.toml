@@ -6,9 +6,9 @@ enableRobotsTXT = true
 enableEmoji = true
 
 [params]
-  description = "个人随笔 · 日常照片 · 游戏 · 电影 · 动漫"
+  description = "个人随笔 · 日常照片 · 电影 · 动漫"
   author = "我"
-  keywords = ["blog", "随笔", "照片", "游戏", "电影", "动漫"]
+  keywords = ["blog", "随笔", "照片", "电影", "动漫"]
   neodbToken = ""  # 本地运行: HUGO_PARAMS_NEODBTOKEN="你的Token" hugo server
   bangumiToken = ""  # 本地运行: HUGO_PARAMS_BANGUMITOKEN="你的Token" hugo server
 
@@ -30,7 +30,7 @@ enableEmoji = true
 
   [params.homeInfoParams]
     Title = "你好，欢迎来到我的博客"
-    Content = "这里记录一些生活随笔、日常照片，还有最近在玩的游戏、看的电影和动漫。"
+    Content = "这里记录一些生活随笔和日常照片，最近看的电影和动漫也会写在这里。"
 
   [params.fuseOpts]
     isCaseSensitive = false
@@ -69,11 +69,6 @@ enableEmoji = true
     name = "影视"
     url = "/neodb/"
     weight = 37
-  [[menu.main]]
-    identifier = "steam"
-    name = "游戏"
-    url = "/steam/"
-    weight = 36
   [[menu.main]]
     identifier = "about"
     name = "关于"
